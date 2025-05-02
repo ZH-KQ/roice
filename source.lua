@@ -2463,6 +2463,16 @@ do
 			Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
 			Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
 		end;
+		
+		function Dropdown:RefreshDropdown(Info)
+			print(Info)
+			for _, Value in next, Options do
+				if Value.Name == Dropdown then
+					Value.Values = Info;
+					Value:SetValues();
+				end;
+			end
+		end
 
 		DropdownOuter.InputBegan:Connect(function(Input)
 			if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
@@ -2612,17 +2622,6 @@ do
 	BaseGroupbox.__namecall = function(Table, Key, ...)
 		return Funcs[Key](...);
 	end;
-	
-
-	function Funcs:RefreshDropdown(Idx, Info)
-		print(Idx, Info)
-		for _, Value in next, Options do
-			if Value.Name == Idx then
-				Value.Values = Info;
-				Value:SetValues();
-			end;
-		end
-	end
 end;
 
 -- < Create other UI elements >
