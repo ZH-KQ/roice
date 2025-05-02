@@ -2303,17 +2303,23 @@ do
 		end;
 
 		function Dropdown:SetValues()
+			local Values = Dropdown.Values;
+			local Buttons = {};
+
 			for _, Element in next, Scrolling:GetChildren() do
 				if not Element:IsA('UIListLayout') then
-					Element:Destroy()
-				end
-			end
-			local Values = Dropdown.Values
-			local Buttons = {}
-			local Count = 0
-			for _, Value in next, Values do
-				local Table = {}
-				Count = Count + 1
+					-- Library:RemoveFromRegistry(Element);
+					Element:Destroy();
+				end;
+			end;
+
+			local Count = 0;
+
+			for Idx, Value in next, Values do
+				local Table = {};
+
+				Count = Count + 1;
+
 				local Button = Library:Create('Frame', {
 					BackgroundColor3 = Library.MainColor;
 					BorderColor3 = Library.OutlineColor;
@@ -2322,11 +2328,13 @@ do
 					ZIndex = 23;
 					Active = true,
 					Parent = Scrolling;
-				})
+				});
+
 				Library:AddToRegistry(Button, {
 					BackgroundColor3 = 'MainColor';
 					BorderColor3 = 'OutlineColor';
-				})
+				});
+
 				local ButtonLabel = Library:CreateLabel({
 					Active = false;
 					Size = UDim2.new(1, -6, 1, 0);
@@ -2334,64 +2342,85 @@ do
 					TextSize = 14;
 					Text = Value;
 					TextXAlignment = Enum.TextXAlignment.Left;
-					ZIndex = 25,
+					ZIndex = 25;
 					Parent = Button;
-				})
-				Library:OnHighlight(Button, Button, {BorderColor3 = 'AccentColor', ZIndex = 24}, {BorderColor3 = 'OutlineColor', ZIndex = 23})
-				local Selected
+				});
+
+				Library:OnHighlight(Button, Button,
+					{ BorderColor3 = 'AccentColor', ZIndex = 24 },
+					{ BorderColor3 = 'OutlineColor', ZIndex = 23 }
+				);
+
+				local Selected;
+
 				if Info.Multi then
-					Selected = Dropdown.Value[Value]
+					Selected = Dropdown.Value[Value];
 				else
-					Selected = Dropdown.Value == Value
-				end
+					Selected = Dropdown.Value == Value;
+				end;
+
 				function Table:UpdateButton()
 					if Info.Multi then
-						Selected = Dropdown.Value[Value]
+						Selected = Dropdown.Value[Value];
 					else
-						Selected = Dropdown.Value == Value
-					end
-					ButtonLabel.TextColor3 = Selected and Library.AccentColor or Library.FontColor
-					Library.RegistryMap[ButtonLabel].Properties.TextColor3 = Selected and 'AccentColor' or 'FontColor'
-				end
+						Selected = Dropdown.Value == Value;
+					end;
+
+					ButtonLabel.TextColor3 = Selected and Library.AccentColor or Library.FontColor;
+					Library.RegistryMap[ButtonLabel].Properties.TextColor3 = Selected and 'AccentColor' or 'FontColor';
+				end;
+
 				ButtonLabel.InputBegan:Connect(function(Input)
 					if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-						local Try = not Selected
+						local Try = not Selected;
+
 						if Dropdown:GetActiveValues() == 1 and (not Try) and (not Info.AllowNull) then
 						else
 							if Info.Multi then
-								Selected = Try
+								Selected = Try;
+
 								if Selected then
-									Dropdown.Value[Value] = true
+									Dropdown.Value[Value] = true;
 								else
-									Dropdown.Value[Value] = nil
-								end
+									Dropdown.Value[Value] = nil;
+								end;
 							else
-								Selected = Try
+								Selected = Try;
+
 								if Selected then
-									Dropdown.Value = Value
+									Dropdown.Value = Value;
 								else
-									Dropdown.Value = nil
-								end
+									Dropdown.Value = nil;
+								end;
+
 								for _, OtherButton in next, Buttons do
-									OtherButton:UpdateButton()
-								end
-							end
-							Table:UpdateButton()
-							Dropdown:Display()
-							Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
-							Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
-							Library:AttemptSave()
-						end
-					end
-				end)
-				Table:UpdateButton()
-				Dropdown:Display()
-				Buttons[Button] = Table
-			end
-			local Y = math.clamp(Count * 20, 0, MAX_DROPDOWN_ITEMS * 20) + 1
-			ListOuter.Size = UDim2.new(1, -8, 0, Y)
-			Scrolling.CanvasSize = UDim2.new(0, 0, 0, (Count * 20) + 1)
-		end
+									OtherButton:UpdateButton();
+								end;
+							end;
+
+							Table:UpdateButton();
+							Dropdown:Display();
+
+							Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
+							Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
+
+							Library:AttemptSave();
+						end;
+					end;
+				end);
+
+				Table:UpdateButton();
+				Dropdown:Display();
+
+				Buttons[Button] = Table;
+			end;
+
+			local Y = math.clamp(Count * 20, 0, MAX_DROPDOWN_ITEMS * 20) + 1;
+			ListOuter.Size = UDim2.new(1, -8, 0, Y);
+			Scrolling.CanvasSize = UDim2.new(0, 0, 0, (Count * 20) + 1);
+
+			-- ListOuter.Size = UDim2.new(1, -8, 0, (#Values * 20) + 2);
+		end;
 
 		function Dropdown:OpenDropdown()
 			ListOuter.Visible = true;
@@ -2434,16 +2463,6 @@ do
 			Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
 			Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
 		end;
-		
-		function Dropdown:RefreshDropdown(Info)
-			for _, Value in next, Options do
-				if Value.Name == "SelectedEgg" then
-					Value.Values = Info
-					Value:SetValues()
-					print("Refreshing dropdown with new values:", Info, Dropdown)
-				end
-			end
-		end
 
 		DropdownOuter.InputBegan:Connect(function(Input)
 			if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
