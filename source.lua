@@ -2615,14 +2615,13 @@ do
 	
 
 	function Funcs:RefreshDropdown(Idx, Info)
-		print(Idx,Info)
 		for _, Value in next, Options do
-			if Value.Name == Idx then
-				Value.Values = Info;
-				Value:SetValues();
-			end;
-		end;
-	end	
+			if Value.Name == Idx and type(Value.SetValues) == "function" then
+				Value:SetValues(Info)
+				break
+			end
+		end
+	end
 end;
 
 -- < Create other UI elements >
