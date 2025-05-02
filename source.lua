@@ -2466,11 +2466,11 @@ do
 		end;
 		
 		function Dropdown:RefreshDropdown(Info)
-			print("Refreshing dropdown with new values:", Info)
 			for _, Value in next, Options do
 				if Value.Name == "SelectedEgg" then
 					Value.Values = Info
 					Value:SetValues()
+					print("Refreshing dropdown with new values:", Info)
 				end
 			end
 		end
