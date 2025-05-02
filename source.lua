@@ -2304,6 +2304,7 @@ do
 
 		function Dropdown:SetValues()
 			local Values = Dropdown.Values;
+			print(Values)
 			local Buttons = {};
 
 			for _, Element in next, Scrolling:GetChildren() do
