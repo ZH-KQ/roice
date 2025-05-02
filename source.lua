@@ -2465,7 +2465,6 @@ do
 		end;
 		
 		function Dropdown:RefreshDropdown(Info)
-			print(Info)
 			for _, Value in next, Options do
 				if Value.Name == Dropdown then
 					Value.Values = Info;
