@@ -2468,7 +2468,7 @@ do
 			for _, Value in next, Options do
 				if Value.Name == Dropdown then
 					Value.Values = Info;
-					Value:SetValues();
+					Value:SetValues(Value.Values);
 				end;
 			end
 		end
