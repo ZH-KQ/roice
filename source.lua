@@ -2469,7 +2469,7 @@ do
 			for _, Value in next, Options do
 				if Value.Name == Dropdown then
 					Value.Values = Info;
-					Dropdown:Display()
+					Dropdown:SetValues()
 				end;
 			end
 		end
