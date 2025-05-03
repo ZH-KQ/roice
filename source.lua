@@ -149,13 +149,12 @@ end;
 
 function Library:MakeDraggable(Instance, Cutoff)
 	local InputService = game:GetService("UserInputService")
-	local RunService = game:GetService("RunService")
 
 	Instance.Active = true
 
 	Instance.InputBegan:Connect(function(Input)
 		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-			local startPos = Input.Position  -- Use Input.Position for both PC and mobile
+			local startPos = Input.Position
 			local ObjPos = Vector2.new(
 				startPos.X - Instance.AbsolutePosition.X,
 				startPos.Y - Instance.AbsolutePosition.Y
@@ -169,15 +168,20 @@ function Library:MakeDraggable(Instance, Cutoff)
 
 			local connection
 			connection = InputService.InputChanged:Connect(function(input)
-				if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+				if not isDragging then return end
+
+				-- Only process movement inputs that have positions
+				if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
 					local currentPos = input.Position
 
-					Instance.Position = UDim2.new(
-						0,
-						currentPos.X - ObjPos.X + (Instance.Size.X.Offset * Instance.AnchorPoint.X),
-						0,
-						currentPos.Y - ObjPos.Y + (Instance.Size.Y.Offset * Instance.AnchorPoint.Y)
-					)
+					if currentPos then
+						Instance.Position = UDim2.new(
+							0,
+							currentPos.X - ObjPos.X + (Instance.Size.X.Offset * Instance.AnchorPoint.X),
+							0,
+							currentPos.Y - ObjPos.Y + (Instance.Size.Y.Offset * Instance.AnchorPoint.Y)
+						)
+					end
 				end
 			end)
 
@@ -185,8 +189,8 @@ function Library:MakeDraggable(Instance, Cutoff)
 			endConn = InputService.InputEnded:Connect(function(endInput)
 				if endInput.UserInputType == Input.UserInputType then
 					isDragging = false
-					connection:Disconnect()
-					endConn:Disconnect()
+					if connection then connection:Disconnect() end
+					if endConn then endConn:Disconnect() end
 				end
 			end)
 		end
