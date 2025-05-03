@@ -1313,61 +1313,55 @@ do
 
 	function Funcs:AddLabel(Text, DoesWrap)
 		local Label = {};
+
 		local Groupbox = self;
 		local Container = Groupbox.Container;
+
 		local TextLabel = Library:CreateLabel({
-			Size = UDim2.new(1, -4, 0, 15),
-			TextSize = 14,
-			Text = Text,
+			Size = UDim2.new(1, -4, 0, 15);
+			TextSize = 14;
+			Text = Text;
 			TextWrapped = DoesWrap or false,
 			RichText = true,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			ZIndex = 5,
-			Parent = Container,
+			TextXAlignment = Enum.TextXAlignment.Left;
+			ZIndex = 5;
+			Parent = Container;
 		});
+
 		if DoesWrap then
 			local Y = select(2, Library:GetTextBounds(Text, Library.Font, 14, Vector2.new(TextLabel.AbsoluteSize.X, math.huge)))
 			TextLabel.Size = UDim2.new(1, -4, 0, Y)
 		else
 			Library:Create('UIListLayout', {
-				Padding = UDim.new(0, 4),
-				FillDirection = Enum.FillDirection.Horizontal,
-				HorizontalAlignment = Enum.HorizontalAlignment.Right,
-				SortOrder = Enum.SortOrder.LayoutOrder,
-				Parent = TextLabel,
+				Padding = UDim.new(0, 4);
+				FillDirection = Enum.FillDirection.Horizontal;
+				HorizontalAlignment = Enum.HorizontalAlignment.Right;
+				SortOrder = Enum.SortOrder.LayoutOrder;
+				Parent = TextLabel;
 			});
 		end
+
 		Label.TextLabel = TextLabel;
 		Label.Container = Container;
-		local _text = Text
-		function Label:GetText()
-			return _text
-		end
-		function Label:SetText(Text)
-			if _text ~= Text then
-				_text = Text
-				TextLabel.Text = Text
-				if DoesWrap then
-					local Y = select(2, Library:GetTextBounds(Text, Library.Font, 14, Vector2.new(TextLabel.AbsoluteSize.X, math.huge)))
-					TextLabel.Size = UDim2.new(1, -4, 0, Y)
-				end
-				Groupbox:Resize();
-			end
-		end
-		Label:SetText(Text)
-		
-		RunService.RenderStepped:Connect(function()
-			if _text ~= TextLabel.Text then
-				_text = TextLabel.Text
-				Label:SetText(Text)
-			end
-		end)
 
-		if not DoesWrap then
+		function Label:SetText(Text)
+			TextLabel.Text = Text
+
+			if DoesWrap then
+				local Y = select(2, Library:GetTextBounds(Text, Library.Font, 14, Vector2.new(TextLabel.AbsoluteSize.X, math.huge)))
+				TextLabel.Size = UDim2.new(1, -4, 0, Y)
+			end
+
+			Groupbox:Resize();
+		end
+
+		if (not DoesWrap) then
 			setmetatable(Label, BaseAddons);
 		end
+
 		Groupbox:AddBlank(5);
 		Groupbox:Resize();
+
 		return Label;
 	end;
 
