@@ -214,11 +214,10 @@ ToggleGuiButton.Size = UDim2.new(0, 200, 0, 50)
 ToggleGuiButton.Position = UDim2.new(0.5, -100, 0.5, -25)
 ToggleGuiButton.Text = "Toggle All GUIs"
 ToggleGuiButton.Parent = ScreenGui
-
--- Make sure the button is always above other GUIs
 ToggleGuiButton.ZIndex = 100000000000000000000
 
--- Toggle visibility of all GUIs except the button
+local isClicking = false
+
 local function toggleVisibility()
 	for _, child in ipairs(ScreenGui:GetChildren()) do
 		if child ~= ToggleGuiButton then
@@ -227,9 +226,23 @@ local function toggleVisibility()
 	end
 end
 
+ToggleGuiButton.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		isClicking = true
+	end
+end)
+
+ToggleGuiButton.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		if isClicking then
+			toggleVisibility()
+		end
+		isClicking = false
+	end
+end)
+
 Library:MakeDraggable(ToggleGuiButton)
-ToggleGuiButton.MouseButton1Click:Connect(toggleVisibility)
-ToggleGuiButton.TouchTap:Connect(toggleVisibility)
 
 function Library:AddToolTip(InfoStr, HoverInstance)
 	local X, Y = Library:GetTextBounds(InfoStr, Library.Font, 14);
