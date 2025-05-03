@@ -164,7 +164,8 @@ local Window = GithubSource:CreateWindow({
 	Title = 'BGSI Rice Hub made by Ricee [🍚]',
 	Center = true,
 	AutoShow = true,
-	TabPadding = 8
+	TabPadding = 8,
+	Size = UDim2.fromOffset(550, 400)
 })
 
 --//TabCreation
@@ -485,7 +486,7 @@ local FPS Booster = MiscellaneousGroupBox:AddButton({
 })
 
 local TeleportsGroupBox = Tabs.Teleports:AddLeftGroupbox('Teleports')
-local World1Label = TeleportsGroupBox:AddLabel("World 1:", true)
+local World1Label = TeleportsGroupBox:AddLabel("World 1", true)
 local TeleportSpawn = TeleportsGroupBox:AddButton({
 	Text = 'Teleport To Spawn',
 	Func = function()
