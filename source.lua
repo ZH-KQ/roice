@@ -175,37 +175,36 @@ function Library:MakeDraggable(Instance, Cutoff)
             end
 
             local isDragging = true
+
+            -- We need InputChanged to continuously track the position while dragging
+            local connection
+            connection = InputService.InputChanged:Connect(function(input)
+                if isDragging then
+                    local currentPos
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        currentPos = Vector2.new(Mouse.X, Mouse.Y)  -- For Mouse input
+                    elseif input.UserInputType == Enum.UserInputType.Touch then
+                        currentPos = input.Position  -- For Touch input
+                    end
+
+                    Instance.Position = UDim2.new(
+                        0,
+                        currentPos.X - ObjPos.X + (Instance.Size.X.Offset * Instance.AnchorPoint.X),
+                        0,
+                        currentPos.Y - ObjPos.Y + (Instance.Size.Y.Offset * Instance.AnchorPoint.Y)
+                    )
+                end
+            end)
+
+            -- Stop dragging when the user stops interacting
             local endConn
             endConn = InputService.InputEnded:Connect(function(endInput)
                 if endInput.UserInputType == Input.UserInputType then
                     isDragging = false
+                    connection:Disconnect()
                     endConn:Disconnect()
                 end
             end)
-
-            -- This handles dragging for both Mouse and Touch input
-            local function updatePosition(currentPos)
-                Instance.Position = UDim2.new(
-                    0,
-                    currentPos.X - ObjPos.X + (Instance.Size.X.Offset * Instance.AnchorPoint.X),
-                    0,
-                    currentPos.Y - ObjPos.Y + (Instance.Size.Y.Offset * Instance.AnchorPoint.Y)
-                )
-            end
-
-            -- While dragging, continuously update the position
-            while isDragging do
-                local currentPos
-                if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    currentPos = Vector2.new(Mouse.X, Mouse.Y)  -- For Mouse input
-                else
-                    currentPos = Input.Position  -- For Touch input
-                end
-
-                updatePosition(currentPos)
-
-                RunService.RenderStepped:Wait()
-            end
         end
     end)
 end
