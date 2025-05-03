@@ -10,11 +10,53 @@ local Mouse = LocalPlayer:GetMouse();
 
 local ProtectGui = protectgui or (syn and syn.protect_gui) or (function() end);
 
-local ScreenGui = Instance.new('ScreenGui');
-ProtectGui(ScreenGui);
+local ScreenGui = Instance.new('ScreenGui')
+ProtectGui(ScreenGui)
 
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global;
-ScreenGui.Parent = CoreGui;
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+ScreenGui.Parent = CoreGui
+
+local draggableButton = Instance.new('TextButton')
+draggableButton.Size = UDim2.new(0, 200, 0, 50)
+draggableButton.Position = UDim2.new(0.5, -100, 0.5, -25)
+draggableButton.Text = "Toggle All GUIs"
+draggableButton.Parent = ScreenGui
+
+local dragging = false
+local dragInput, dragStart, startPos
+
+local function onInputBegan(input, gameProcessed)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 and not gameProcessed then
+		dragging = true
+		dragStart = input.Position
+		startPos = draggableButton.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end
+
+local function onInputChanged(input)
+	if dragging then
+		local delta = input.Position - dragStart
+		draggableButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end
+
+draggableButton.InputBegan:Connect(onInputBegan)
+draggableButton.InputChanged:Connect(onInputChanged)
+
+local function toggleVisibility()
+	for _, child in ipairs(ScreenGui:GetChildren()) do
+		if child ~= draggableButton then
+			child.Visible = not child.Visible
+		end
+	end
+end
+
+draggableButton.MouseButton1Click:Connect(toggleVisibility)
 
 local Toggles = {};
 local Options = {};
@@ -148,65 +190,65 @@ function Library:CreateLabel(Properties, IsHud)
 end;
 
 function Library:MakeDraggable(Instance, Cutoff)
-    local InputService = game:GetService("UserInputService")
-    local RunService = game:GetService("RunService")
-    local Player = game:GetService("Players").LocalPlayer
-    local Mouse = Player:GetMouse()
+	local InputService = game:GetService("UserInputService")
+	local RunService = game:GetService("RunService")
+	local Player = game:GetService("Players").LocalPlayer
+	local Mouse = Player:GetMouse()
 
-    Instance.Active = true
+	Instance.Active = true
 
-    Instance.InputBegan:Connect(function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-            local startPos
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                startPos = Vector2.new(Mouse.X, Mouse.Y)  -- Mouse position for desktop
-            else
-                startPos = Input.Position  -- Touch position for mobile
-            end
+	Instance.InputBegan:Connect(function(Input)
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+			local startPos
+			if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+				startPos = Vector2.new(Mouse.X, Mouse.Y)  -- Mouse position for desktop
+			else
+				startPos = Input.Position  -- Touch position for mobile
+			end
 
-            local ObjPos = Vector2.new(
-                startPos.X - Instance.AbsolutePosition.X,
-                startPos.Y - Instance.AbsolutePosition.Y
-            )
+			local ObjPos = Vector2.new(
+				startPos.X - Instance.AbsolutePosition.X,
+				startPos.Y - Instance.AbsolutePosition.Y
+			)
 
-            -- Early exit if the drag starts too far from the cutoff
-            if ObjPos.Y > (Cutoff or 40) then
-                return
-            end
+			-- Early exit if the drag starts too far from the cutoff
+			if ObjPos.Y > (Cutoff or 40) then
+				return
+			end
 
-            local isDragging = true
+			local isDragging = true
 
-            -- We need InputChanged to continuously track the position while dragging
-            local connection
-            connection = InputService.InputChanged:Connect(function(input)
-                if isDragging then
-                    local currentPos
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        currentPos = Vector2.new(Mouse.X, Mouse.Y)  -- For Mouse input
-                    elseif input.UserInputType == Enum.UserInputType.Touch then
-                        currentPos = input.Position  -- For Touch input
-                    end
+			-- We need InputChanged to continuously track the position while dragging
+			local connection
+			connection = InputService.InputChanged:Connect(function(input)
+				if isDragging then
+					local currentPos
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
+						currentPos = Vector2.new(Mouse.X, Mouse.Y)  -- For Mouse input
+					elseif input.UserInputType == Enum.UserInputType.Touch then
+						currentPos = input.Position  -- For Touch input
+					end
 
-                    Instance.Position = UDim2.new(
-                        0,
-                        currentPos.X - ObjPos.X + (Instance.Size.X.Offset * Instance.AnchorPoint.X),
-                        0,
-                        currentPos.Y - ObjPos.Y + (Instance.Size.Y.Offset * Instance.AnchorPoint.Y)
-                    )
-                end
-            end)
+					Instance.Position = UDim2.new(
+						0,
+						currentPos.X - ObjPos.X + (Instance.Size.X.Offset * Instance.AnchorPoint.X),
+						0,
+						currentPos.Y - ObjPos.Y + (Instance.Size.Y.Offset * Instance.AnchorPoint.Y)
+					)
+				end
+			end)
 
-            -- Stop dragging when the user stops interacting
-            local endConn
-            endConn = InputService.InputEnded:Connect(function(endInput)
-                if endInput.UserInputType == Input.UserInputType then
-                    isDragging = false
-                    connection:Disconnect()
-                    endConn:Disconnect()
-                end
-            end)
-        end
-    end)
+			-- Stop dragging when the user stops interacting
+			local endConn
+			endConn = InputService.InputEnded:Connect(function(endInput)
+				if endInput.UserInputType == Input.UserInputType then
+					isDragging = false
+					connection:Disconnect()
+					endConn:Disconnect()
+				end
+			end)
+		end
+	end)
 end
 
 function Library:AddToolTip(InfoStr, HoverInstance)
