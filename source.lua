@@ -216,8 +216,6 @@ ToggleGuiButton.Text = "Toggle All GUIs"
 ToggleGuiButton.Parent = ScreenGui
 ToggleGuiButton.ZIndex = 100000000000000000000
 
-local isClicking = false
-
 local function toggleVisibility()
 	for _, child in ipairs(ScreenGui:GetChildren()) do
 		if child ~= ToggleGuiButton then
@@ -226,22 +224,7 @@ local function toggleVisibility()
 	end
 end
 
-ToggleGuiButton.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		isClicking = true
-	end
-end)
-
-ToggleGuiButton.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		if isClicking then
-			toggleVisibility()
-		end
-		isClicking = false
-	end
-end)
-
+ToggleGuiButton.Activated:Connect(toggleVisibility)
 Library:MakeDraggable(ToggleGuiButton)
 
 function Library:AddToolTip(InfoStr, HoverInstance)
