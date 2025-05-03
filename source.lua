@@ -150,7 +150,8 @@ end;
 function Library:MakeDraggable(Instance, Cutoff)
 	local InputService = game:GetService("UserInputService")
 	local RunService = game:GetService("RunService")
-	local Mouse = InputService:GetMouse()
+	local Player = game:GetService("Players").LocalPlayer
+	local Mouse = Player:GetMouse()  -- Gets the mouse object for local player
 
 	Instance.Active = true
 	Instance.InputBegan:Connect(function(Input)
