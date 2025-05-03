@@ -229,7 +229,6 @@ function Library:AddToolTip(InfoStr, HoverInstance)
 	})
 
 	local Label = Library:CreateLabel({
-		Name = "Tooltip";
 		Position = UDim2.fromOffset(3, 1),
 		Size = UDim2.fromOffset(X, Y);
 		TextSize = 14;
@@ -2751,6 +2750,7 @@ do
 	});
 
 	local WatermarkLabel = Library:CreateLabel({
+		Name = "InnerFrameLabel"
 		Position = UDim2.new(0, 5, 0, 0);
 		Size = UDim2.new(1, -4, 1, 0);
 		TextSize = 14;
