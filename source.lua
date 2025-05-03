@@ -16,27 +16,6 @@ ProtectGui(ScreenGui)
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 ScreenGui.Parent = CoreGui
 
-local draggableButton = Instance.new('TextButton')
-draggableButton.Size = UDim2.new(0, 200, 0, 50)
-draggableButton.Position = UDim2.new(0.5, -100, 0.5, -25)
-draggableButton.Text = "Toggle All GUIs"
-draggableButton.Parent = ScreenGui
-
--- Make sure the button is always above other GUIs
-draggableButton.ZIndex = 9999
-
--- Toggle visibility of all GUIs except the button
-local function toggleVisibility()
-    for _, child in ipairs(ScreenGui:GetChildren()) do
-        if child ~= draggableButton then
-            child.Visible = not child.Visible
-        end
-    end
-end
-
-draggableButton.MouseButton1Click:Connect(toggleVisibility)
-draggableButton.TouchTap:Connect(toggleVisibility)
-
 local Toggles = {};
 local Options = {};
 
@@ -229,6 +208,28 @@ function Library:MakeDraggable(Instance, Cutoff)
 		end
 	end)
 end
+
+local ToggleGuiButton = Instance.new('TextButton')
+ToggleGuiButton.Size = UDim2.new(0, 200, 0, 50)
+ToggleGuiButton.Position = UDim2.new(0.5, -100, 0.5, -25)
+ToggleGuiButton.Text = "Toggle All GUIs"
+ToggleGuiButton.Parent = ScreenGui
+
+-- Make sure the button is always above other GUIs
+ToggleGuiButton.ZIndex = 100000000000000000000
+
+-- Toggle visibility of all GUIs except the button
+local function toggleVisibility()
+	for _, child in ipairs(ScreenGui:GetChildren()) do
+		if child ~= ToggleGuiButton then
+			child.Visible = not child.Visible
+		end
+	end
+end
+
+Library:MakeDraggable(ToggleGuiButton)
+ToggleGuiButton.MouseButton1Click:Connect(toggleVisibility)
+ToggleGuiButton.TouchTap:Connect(toggleVisibility)
 
 function Library:AddToolTip(InfoStr, HoverInstance)
 	local X, Y = Library:GetTextBounds(InfoStr, Library.Font, 14);
