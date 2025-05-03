@@ -8,6 +8,12 @@
 --//Check Game ID
 if game.PlaceId ~= 85896571713843 then return end
 
+--//Dependencies
+local GithubRepository = 'https://raw.githubusercontent.com/ZH-KQ/roice/refs/heads/main/'
+local GithubSource = loadstring(game:HttpGet(GithubRepository .. 'source.lua'))()
+local ThemeManager = loadstring(game:HttpGet(GithubRepository .. 'addons/ThemeManager.lua'))()
+local SaveManager = loadstring(game:HttpGet(GithubRepository .. 'addons/SaveManager.lua'))()
+
 --//Configuration Variables
 local AutoBubble = false
 local AutoBubbleDelay = 0
@@ -16,15 +22,19 @@ local AutoCollectPickups = false
 local AutoCollectPlaytimeRewards = false
 local SelectedEgg = "--"
 local AutoOpenEggs = false
+local AutoBuyBlackMarket = false
+local AutoBuyAlienShop = false
 
 --//RobloxServices
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 --// Variables
+local Player = game.Players.LocalPlayer
 local RenderedFolder = game.Workspace:WaitForChild("Rendered")
-local WorldMap = game.Players.LocalPlayer.PlayerGui:WaitForChild("ScreenGui"):WaitForChild("WorldMap")
-local WheelSpin = game.Players.LocalPlayer.PlayerGui:WaitForChild("ScreenGui"):WaitForChild("WheelSpin")
+local WorldMap = Player.PlayerGui:WaitForChild("ScreenGui"):WaitForChild("WorldMap")
+local WheelSpin = Player.PlayerGui:WaitForChild("ScreenGui"):WaitForChild("WheelSpin")
 local SelectableEggsCollection = {}
 
 --// Functions
@@ -40,6 +50,21 @@ local function GetFullPath(instance)
 	end
 	return path
 end
+local function CollectPickups()
+	for i, v in next, game:GetService("Workspace").Rendered:GetChildren() do
+		if v.Name == "Chunker" then
+			for i2, v2 in next, v:GetChildren() do
+				local Part, HasMeshPart = v2:FindFirstChild("Part"), v2:FindFirstChildWhichIsA("MeshPart");
+				local HasStars = Part and Part:FindFirstChild("Stars");
+				local HasPartMesh = Part and Part:FindFirstChild("Mesh");
+				if HasMeshPart or HasStars or HasPartMesh then
+					game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Pickups"):WaitForChild("CollectPickup"):FireServer(v2.Name);
+					v2:Destroy();
+				end;
+			end;
+		end;
+	end;
+end;
 local function RefreshEggList()
 	table.clear(SelectableEggsCollection)
 	table.insert(SelectableEggsCollection, "--")
@@ -61,15 +86,74 @@ local function RefreshEggList()
 	end
 	return SelectableEggsCollection
 end
+	
+local function TeleportBypass2(Character, TargetPosition)
+	local Humanoid = Character and Character:FindFirstChild("Humanoid")
+	local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+	if not TargetPosition or not HumanoidRootPart or not Humanoid then
+		warn("Information mismatch. Teleport not started.")
+	else
+		if HumanoidRootPart then
+			local CurrentYPosition = HumanoidRootPart.Position.Y
+			local TargetYPosition = TargetPosition.Y
+			if math.abs(CurrentYPosition - TargetYPosition) > 5 then
+				print("no")
+			end
+		end
+		local speed = Humanoid.WalkSpeed
+		local reached = false
+		Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+		local originalCollisions = {}
+		for _, part in ipairs(Character:GetChildren()) do
+			if part:IsA("BasePart") then
+				originalCollisions[part] = part.CanCollide
+				part.CanCollide = false
+			end
+		end
+		for _, child in ipairs(HumanoidRootPart:GetChildren()) do
+			if child:IsA("BodyVelocity") then
+				child:Destroy()
+			end
+		end
+		local bodyVelocity = Instance.new("BodyVelocity")
+		bodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
+		bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+		bodyVelocity.Parent = HumanoidRootPart
+
+		local noclipConnection
+		noclipConnection = RunService.Stepped:Connect(function()
+			if Character ~= nil then
+				for _, child in pairs(Character:GetDescendants()) do
+					if child:IsA("BasePart") and child.CanCollide == true then
+						child.CanCollide = false
+					end
+				end
+			end
+		end)
+		RunService.RenderStepped:Connect(function(dt)
+			if not Character or not Humanoid or not HumanoidRootPart or reached then return end
+			local toTarget = TargetPosition - HumanoidRootPart.Position
+			local horizontal = Vector3.new(toTarget.X, toTarget.Y, toTarget.Z)
+			local distance = horizontal.Magnitude
+			if distance < 0.2 then
+				reached = true
+				bodyVelocity:Destroy()
+				noclipConnection:Disconnect()
+				for part, canCollide in pairs(originalCollisions) do
+					part.CanCollide = canCollide
+				end
+				Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+				return
+			end
+			local step = math.min(speed, distance / dt)
+			local moveDirection = horizontal.Unit * step
+			bodyVelocity.Velocity = moveDirection
+		end)
+	end
+end
 
 --//Startup
 RefreshEggList()
-
---//Dependencies
-local GithubRepository = 'https://raw.githubusercontent.com/ZH-KQ/roice/refs/heads/main/'
-local GithubSource = loadstring(game:HttpGet(GithubRepository .. 'source.lua'))()
-local ThemeManager = loadstring(game:HttpGet(GithubRepository .. 'addons/ThemeManager.lua'))()
-local SaveManager = loadstring(game:HttpGet(GithubRepository .. 'addons/SaveManager.lua'))()
 
 --//WindowCreation
 local Window = GithubSource:CreateWindow({
@@ -86,8 +170,22 @@ local Window = GithubSource:CreateWindow({
 --//TabCreation
 local Tabs = {
 	['Main'] = Window:AddTab('Main'),
+	['Teleports'] = Window:AddTab('Teleports'),
 	['UI Settings'] = Window:AddTab('UI Settings'),
 }
+
+--//Coordinates
+local CoordinateGroupBox = Tabs.Main:AddLeftGroupbox('Coordinates:')
+local CoordinateLabel = CoordinateGroupBox:AddLabel("X: 0  Y: 0  Z: 0", true)
+RunService.RenderStepped:Connect(function()
+	local Character = Player.Character or Player.CharacterAdded:Wait()
+	local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+	if HumanoidRootPart then
+		local Position = HumanoidRootPart.Position
+		local CoordinateText = string.format("X: %.1f  Y: %.1f  Z: %.1f", Position.X, Position.Y, Position.Z)
+		CoordinateLabel:SetText(CoordinateText)
+	end
+end)
 
 --//AutoBubble
 local AutoBubbleGroupBox = Tabs.Main:AddLeftGroupbox('Auto Bubble')
@@ -187,39 +285,10 @@ AutoCollectGroupBox:AddToggle('AutoCollectPickups', {
 		AutoCollectPickups = Value
 		if AutoCollectPickups then
 			task.spawn(function()
-				local function CheckPickup(instance)
-					if not AutoCollectPickups then return end
-					if isUUID(instance.Name) then
-						local args = { instance.Name }
-						ReplicatedStorage
-							:WaitForChild("Remotes")
-							:WaitForChild("Pickups")
-							:WaitForChild("CollectPickup")
-							:FireServer(unpack(args))
-						pcall(function()
-							instance:Destroy()
-						end)
-					end
+				while AutoCollectPickups do
+					CollectPickups()
+					task.wait(1)
 				end
-				local function CheckChunkerFolder(ChunkerFolder)
-					for _, Pickup in pairs(ChunkerFolder:GetChildren()) do
-						CheckPickup(Pickup)
-					end
-
-					ChunkerFolder.ChildAdded:Connect(function(Pickup)
-						CheckPickup(Pickup)
-					end)
-				end
-				for _, Child in pairs(RenderedFolder:GetChildren()) do
-					if Child.Name == "Chunker" then
-						CheckChunkerFolder(Child)
-					end
-				end
-				RenderedFolder.ChildAdded:Connect(function(Child)
-					if Child.Name == "Chunker" then
-						CheckChunkerFolder(Child)
-					end
-				end)
 			end)
 		end
 	end
@@ -254,85 +323,6 @@ AutoEggsGroupBox:AddDropdown('SelectedEgg', {
 	Text = 'Selected Egg',
 	Callback = function(Value)
 		SelectedEgg = Value
-		local PickedOption = SelectedEgg
-		local EggLocation = nil
-		for _, folder in ipairs(game.Workspace:WaitForChild("Rendered"):GetChildren()) do
-			if folder:IsA("Folder") and folder.Name == "Chunker" then
-				EggLocation = folder:FindFirstChild(PickedOption)
-				if EggLocation then break end
-			end
-		end
-		if EggLocation then
-			print("Egg Location updated to: " .. EggLocation.Name)
-			local EggPlate = EggLocation:FindFirstChild("Plate")
-			local Character = game.Players.LocalPlayer.Character
-			local Humanoid = Character and Character:FindFirstChild("Humanoid")
-			local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-			if not EggPlate or not HumanoidRootPart or not Humanoid then
-				warn("Egg plate / HumanoidRootPart / Humanoid not found or doesn't exist!")
-			else
-				local targetPosition = EggPlate.Position + Vector3.new(0, 5, 0)
-				local speed = Humanoid.WalkSpeed
-				local reached = false
-				Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-				local originalCollisions = {}
-				for _, part in ipairs(Character:GetChildren()) do
-					if part:IsA("BasePart") then
-						originalCollisions[part] = part.CanCollide
-						part.CanCollide = false
-					end
-				end
-				for _, child in ipairs(HumanoidRootPart:GetChildren()) do
-					if child:IsA("BodyVelocity") then
-						child:Destroy()
-					end
-				end
-				local bodyVelocity = Instance.new("BodyVelocity")
-				bodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
-				bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-				bodyVelocity.Parent = HumanoidRootPart
-
-				local noclipConnection
-				noclipConnection = RunService.Stepped:Connect(function()
-					if Character ~= nil then
-						for _, child in pairs(Character:GetDescendants()) do
-							if child:IsA("BasePart") and child.CanCollide == true then
-								child.CanCollide = false
-							end
-						end
-					end
-				end)
-				RunService.RenderStepped:Connect(function(dt)
-					if not Character or not Humanoid or not HumanoidRootPart or reached then return end
-					local toTarget = targetPosition - HumanoidRootPart.Position
-					local horizontal = Vector3.new(toTarget.X, 0, toTarget.Z)
-					local distance = horizontal.Magnitude
-					if distance < 0.2 then
-						reached = true
-						bodyVelocity:Destroy()
-						noclipConnection:Disconnect()
-						for part, canCollide in pairs(originalCollisions) do
-							part.CanCollide = canCollide
-						end
-						Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-						return
-					end
-					local step = math.min(speed, distance / dt)
-					local moveDirection = horizontal.Unit * step
-					bodyVelocity.Velocity = Vector3.new(moveDirection.X, bodyVelocity.Velocity.Y, moveDirection.Z)
-					if SelectedEgg ~= PickedOption then 
-						reached = true
-						return
-					end
-				end)
-				local function stabilizeYVelocity()
-					bodyVelocity.Velocity = Vector3.new(bodyVelocity.Velocity.X, 0, bodyVelocity.Velocity.Z)
-				end
-				RunService.RenderStepped:Connect(stabilizeYVelocity)
-			end
-		else
-			print("Egg not found!")
-		end
 	end
 })
 local RefreshEggSelectionButton = AutoEggsGroupBox:AddButton({
@@ -352,6 +342,213 @@ AutoEggsGroupBox:AddToggle('AutoOpenEggs', {
 	Text = 'Auto Open Eggs',
 	Default = false,
 	Callback = function(Value)
-
+		AutoOpenEggs = Value
+		if AutoOpenEggs then
+			task.spawn(function()
+				while AutoOpenEggs do
+					local Character = Player.Character
+					local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+					local EggLocation = nil
+					if Character and HumanoidRootPart then
+						if SelectedEgg == "--" then return end
+						for _, folder in ipairs(game.Workspace:WaitForChild("Rendered"):GetChildren()) do
+							if folder:IsA("Folder") and folder.Name == "Chunker" then
+								EggLocation = folder:FindFirstChild(SelectedEgg)
+								if EggLocation then break end
+							end
+						end
+						if EggLocation then
+							local EggPlate = EggLocation:FindFirstChild("Plate")
+							if EggPlate then
+								local TargetPosition = EggPlate.Position + Vector3.new(0, 5, 0)
+								local toTarget = TargetPosition - HumanoidRootPart.Position
+								local horizontal = Vector3.new(toTarget.X, 0, toTarget.Z)
+								local distance = horizontal.Magnitude
+								if distance < 13 then
+									VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.R, false, game)
+									task.wait(0.0001)
+									VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.R, false, game)
+								else
+									if not Character:FindFirstChildOfClass("BodyVelocity") then
+										TeleportBypass2(Character,TargetPosition)
+									end
+								end
+							end
+						else
+							GithubSource:Notify("Egg not found, teleport to spawn and refresh selectable eggs.", 5)
+							return
+						end
+					end
+					task.wait(0.1)
+				end
+			end)
+		end
 	end
+})
+local MerchantsGroupBox = Tabs.Main:AddRightGroupbox('Merchants')
+MerchantsGroupBox:AddToggle('AutoBuyBlackMarket', {
+	Text = 'Auto  Buy Black Market',
+	Default = false,
+	Callback = function(Value)
+		AutoBuyBlackMarket = Value
+		if AutoBuyBlackMarket then
+			task.spawn(function()
+				while AutoBuyBlackMarket do
+					for i = 1, 3 do
+						local Arguments = {
+							"BuyShopItem",
+							"shard-shop",
+							i
+						}
+						ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(Arguments))
+						task.wait(1)
+					end
+					task.wait(4)
+				end
+			end)
+		end
+	end
+})
+MerchantsGroupBox:AddToggle('AutoBuyAlienShop', {
+	Text = 'Auto  Buy Alien Shop',
+	Default = false,
+	Callback = function(Value)
+		AutoBuyAlienShop = Value
+		if AutoBuyAlienShop then
+			task.spawn(function()
+				while AutoBuyAlienShop do
+					for i = 1, 3 do
+						local Arguments = {
+							"BuyShopItem",
+							"alien-shop",
+							i
+						}
+						ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(Arguments))
+						task.wait(1)
+					end
+					task.wait(4)
+				end
+			end)
+		end
+	end
+})
+local MiscellaneousGroupBox = Tabs.Main:AddRightGroupbox('Miscellaneous')
+local FPS Booster = MiscellaneousGroupBox:AddButton({
+	Text = 'FPS Booster',
+	Func = function()
+		pcall(function()
+			local Terrain = workspace:FindFirstChildOfClass('Terrain')
+			Terrain.WaterWaveSize = 0
+			Terrain.WaterWaveSpeed = 0
+			Terrain.WaterReflectance = 0
+			Terrain.WaterTransparency = 0
+			game.Lighting.GlobalShadows = false
+			game.Lighting.FogEnd = 9e9
+			settings().Rendering.QualityLevel = 1
+			for i,v in pairs(game:GetDescendants()) do
+				if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("MeshPart") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
+					v.Material = "Plastic"
+					v.Reflectance = 0
+				elseif v:IsA("Decal") then
+					v.Transparency = 1
+				elseif v:IsA("Texture") then
+					v.Transparency = 1
+				elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+					v.Lifetime = NumberRange.new(0)
+				elseif v:IsA("Explosion") then
+					v.BlastPressure = 1
+					v.BlastRadius = 1
+				end
+			end
+			for i,v in pairs(game.Lighting:GetDescendants()) do
+				if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
+					v.Enabled = false
+				end
+			end
+			workspace.DescendantAdded:Connect(function(child)
+				task.spawn(function()
+					if child:IsA('ForceField') then
+						RunService.Heartbeat:Wait()
+						child:Destroy()
+					elseif child:IsA('Sparkles') then
+						RunService.Heartbeat:Wait()
+						child:Destroy()
+					elseif child:IsA('Smoke') or child:IsA('Fire') then
+						RunService.Heartbeat:Wait()
+						child:Destroy()
+					end
+				end)
+			end)
+		end)
+	end,
+	DoubleClick = true,
+})
+
+local TeleportsGroupBox = Tabs.Teleports:AddLeftGroupbox('Teleports')
+local World1Label = TeleportsGroupBox:AddLabel("World 1", true)
+local TeleportSpawn = TeleportsGroupBox:AddButton({
+	Text = 'Teleport To Spawn',
+	Func = function()
+		local args = {
+			"Teleport",
+			"Workspace.Worlds.The Overworld.PortalSpawn"
+		}
+		game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
+	end,
+	DoubleClick = false,
+})
+local TeleportFloatingIsland = TeleportsGroupBox:AddButton({
+	Text = 'Teleport To Floating Island',
+	Func = function()
+		local args = {
+			"Teleport",
+			"Workspace.Worlds.The Overworld.Islands.Floating Island.Island.Portal.Spawn"
+		}
+		game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
+	end,
+	DoubleClick = false,
+})
+local TeleportOuterSpace = TeleportsGroupBox:AddButton({
+	Text = 'Teleport To Outer Space',
+	Func = function()
+		local args = {
+			"Teleport",
+			"Workspace.Worlds.The Overworld.Islands.Outer Space.Island.Portal.Spawn"
+		}
+		game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
+	end,
+	DoubleClick = false,
+})
+local TeleportTwilight = TeleportsGroupBox:AddButton({
+	Text = 'Teleport To Twilight',
+	Func = function()
+		local args = {
+			"Teleport",
+			"Workspace.Worlds.The Overworld.Islands.Twilight.Island.Portal.Spawn"
+		}
+		game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
+	end,
+	DoubleClick = false,
+})
+local TeleportTheVoid = TeleportsGroupBox:AddButton({
+	Text = 'Teleport To The Void',
+	Func = function()
+		local args = {
+			"Teleport",
+			"Workspace.Worlds.The Overworld.Islands.The Void.Island.Portal.Spawn"
+		}
+		game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
+	end,
+	DoubleClick = false,
+})
+local TeleportZen = TeleportsGroupBox:AddButton({
+	Text = 'Teleport To Zen',
+	Func = function()
+		local args = {
+			"Teleport",
+			"Workspace.Worlds.The Overworld.Islands.Zen.Island.Portal.Spawn"
+		}
+		game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
+	end,
+	DoubleClick = false,
 })
