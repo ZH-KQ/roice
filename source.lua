@@ -229,6 +229,7 @@ function Library:AddToolTip(InfoStr, HoverInstance)
 	})
 
 	local Label = Library:CreateLabel({
+		Name = "Tooltip";
 		Position = UDim2.fromOffset(3, 1),
 		Size = UDim2.fromOffset(X, Y);
 		TextSize = 14;
@@ -2801,6 +2802,7 @@ do
 	}, true);
 
 	local KeybindLabel = Library:CreateLabel({
+		Name = "Keybinds";
 		Size = UDim2.new(1, 0, 0, 20);
 		Position = UDim2.fromOffset(5, 2),
 		TextXAlignment = Enum.TextXAlignment.Left,
