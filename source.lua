@@ -150,42 +150,27 @@ end;
 function Library:MakeDraggable(Instance, Cutoff)
 	local InputService = game:GetService("UserInputService")
 	local RunService = game:GetService("RunService")
-	local Player = game:GetService("Players").LocalPlayer
-	local Mouse = Player:GetMouse()
 
 	Instance.Active = true
 
 	Instance.InputBegan:Connect(function(Input)
 		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-			local startPos
-			if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-				startPos = Vector2.new(Mouse.X, Mouse.Y)  -- Mouse position for desktop
-			else
-				startPos = Input.Position  -- Touch position for mobile
-			end
-
+			local startPos = Input.Position  -- Use Input.Position for both PC and mobile
 			local ObjPos = Vector2.new(
 				startPos.X - Instance.AbsolutePosition.X,
 				startPos.Y - Instance.AbsolutePosition.Y
 			)
 
-			-- Early exit if the drag starts too far from the cutoff
 			if ObjPos.Y > (Cutoff or 40) then
 				return
 			end
 
 			local isDragging = true
 
-			-- We need InputChanged to continuously track the position while dragging
 			local connection
 			connection = InputService.InputChanged:Connect(function(input)
-				if isDragging then
-					local currentPos
-					if input.UserInputType == Enum.UserInputType.MouseButton1 then
-						currentPos = Vector2.new(Mouse.X, Mouse.Y)  -- For Mouse input
-					elseif input.UserInputType == Enum.UserInputType.Touch then
-						currentPos = input.Position  -- For Touch input
-					end
+				if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+					local currentPos = input.Position
 
 					Instance.Position = UDim2.new(
 						0,
@@ -196,7 +181,6 @@ function Library:MakeDraggable(Instance, Cutoff)
 				end
 			end)
 
-			-- Stop dragging when the user stops interacting
 			local endConn
 			endConn = InputService.InputEnded:Connect(function(endInput)
 				if endInput.UserInputType == Input.UserInputType then
