@@ -228,7 +228,7 @@ AutoBubbleGroupBox:AddInput('AutoBubbleDelay', {
 	end
 })
 --//AutoCollect
-local AutoCollectGroupBox = Tabs.Main:AddRightGroupbox('Auto Collect')
+local AutoCollectGroupBox = Tabs.Main:AddLeftGroupbox('Auto Collect')
 AutoCollectGroupBox:AddToggle('AutoCollectCollectibles', {
 	Text = 'Auto Collect Collectibles',
 	Default = false,
@@ -316,7 +316,7 @@ AutoCollectGroupBox:AddToggle('AutoCollectPlaytimeRewards', {
 		end
 	end
 })
-local AutoEggsGroupBox = Tabs.Main:AddLeftGroupbox('Auto Eggs')
+local AutoEggsGroupBox = Tabs.Main:AddRightGroupbox('Auto Eggs')
 AutoEggsGroupBox:AddDropdown('SelectedEgg', {
 	Values = SelectableEggsCollection,
 	Default = 1,
