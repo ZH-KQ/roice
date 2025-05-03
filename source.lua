@@ -197,24 +197,6 @@ function Library:MakeDraggable(Instance, Cutoff)
 	end)
 end
 
-local ToggleGuiButton = Instance.new('TextButton')
-ToggleGuiButton.Size = UDim2.new(0, 200, 0, 50)
-ToggleGuiButton.Position = UDim2.new(0.5, -100, 0.5, -25)
-ToggleGuiButton.Text = "Toggle All GUIs"
-ToggleGuiButton.Parent = ScreenGui
-ToggleGuiButton.ZIndex = 100000000000000000000
-
-local function toggleVisibility()
-	for _, child in ipairs(ScreenGui:GetChildren()) do
-		if child ~= ToggleGuiButton then
-			child.Visible = not child.Visible
-		end
-	end
-end
-
-ToggleGuiButton.Activated:Connect(toggleVisibility)
-Library:MakeDraggable(ToggleGuiButton)
-
 function Library:AddToolTip(InfoStr, HoverInstance)
 	local X, Y = Library:GetTextBounds(InfoStr, Library.Font, 14);
 	local Tooltip = Library:Create('Frame', {
@@ -2750,7 +2732,6 @@ do
 	});
 
 	local WatermarkLabel = Library:CreateLabel({
-		Name = "InnerFrameLabel";
 		Position = UDim2.new(0, 5, 0, 0);
 		Size = UDim2.new(1, -4, 1, 0);
 		TextSize = 14;
@@ -2802,7 +2783,6 @@ do
 	}, true);
 
 	local KeybindLabel = Library:CreateLabel({
-		Name = "Keybinds";
 		Size = UDim2.new(1, 0, 0, 20);
 		Position = UDim2.fromOffset(5, 2),
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -2966,6 +2946,7 @@ function Library:CreateWindow(...)
 	};
 
 	local Outer = Library:Create('Frame', {
+		Name = "Window";
 		AnchorPoint = Config.AnchorPoint,
 		BackgroundColor3 = Color3.new(0, 0, 0);
 		BorderSizePixel = 0;
@@ -2977,6 +2958,24 @@ function Library:CreateWindow(...)
 	});
 
 	Library:MakeDraggable(Outer, 25);
+	
+	local ToggleGuiButton = Instance.new('TextButton')
+	ToggleGuiButton.Size = UDim2.new(0, 200, 0, 50)
+	ToggleGuiButton.Position = UDim2.new(0.5, -100, 0.5, -25)
+	ToggleGuiButton.Text = "Toggle All GUIs"
+	ToggleGuiButton.Parent = ScreenGui
+	ToggleGuiButton.ZIndex = 100000000000000000000
+
+	local function toggleVisibility()
+		for _, child in ipairs(ScreenGui:GetChildren()) do
+			if child.Name == "Window" then
+				child.Visible = not child.Visible
+			end
+		end
+	end
+
+	ToggleGuiButton.Activated:Connect(toggleVisibility)
+	Library:MakeDraggable(ToggleGuiButton)
 
 	local Inner = Library:Create('Frame', {
 		BackgroundColor3 = Library.MainColor;
