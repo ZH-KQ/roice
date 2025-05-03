@@ -148,57 +148,66 @@ function Library:CreateLabel(Properties, IsHud)
 end;
 
 function Library:MakeDraggable(Instance, Cutoff)
-	local InputService = game:GetService("UserInputService")
-	local RunService = game:GetService("RunService")
-	local Mouse = game:GetService("Players").LocalPlayer:GetMouse()  -- For Mouse input on desktop
+    local InputService = game:GetService("UserInputService")
+    local RunService = game:GetService("RunService")
+    local Player = game:GetService("Players").LocalPlayer
+    local Mouse = Player:GetMouse()
 
-	Instance.Active = true
+    Instance.Active = true
 
-	Instance.InputBegan:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-			local startPos
-			if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-				startPos = Vector2.new(Mouse.X, Mouse.Y)  -- Mouse position for desktop
-			else
-				startPos = Input.Position  -- Touch position for mobile
-			end
+    Instance.InputBegan:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+            local startPos
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                startPos = Vector2.new(Mouse.X, Mouse.Y)  -- Mouse position for desktop
+            else
+                startPos = Input.Position  -- Touch position for mobile
+            end
 
-			local ObjPos = Vector2.new(
-				startPos.X - Instance.AbsolutePosition.X,
-				startPos.Y - Instance.AbsolutePosition.Y
-			)
+            local ObjPos = Vector2.new(
+                startPos.X - Instance.AbsolutePosition.X,
+                startPos.Y - Instance.AbsolutePosition.Y
+            )
 
-			if ObjPos.Y > (Cutoff or 40) then
-				return
-			end
+            -- Early exit if the drag starts too far from the cutoff
+            if ObjPos.Y > (Cutoff or 40) then
+                return
+            end
 
-			local isDragging = true
-			local endConn
-			endConn = InputService.InputEnded:Connect(function(endInput)
-				if endInput.UserInputType == Input.UserInputType then
-					isDragging = false
-					endConn:Disconnect()
-				end
-			end)
+            local isDragging = true
+            local endConn
+            endConn = InputService.InputEnded:Connect(function(endInput)
+                if endInput.UserInputType == Input.UserInputType then
+                    isDragging = false
+                    endConn:Disconnect()
+                end
+            end)
 
-			while isDragging do
-				local currentPos
-				if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-					currentPos = Vector2.new(Mouse.X, Mouse.Y)  -- For Mouse input
-				else
-					currentPos = Input.Position  -- For Touch input
-				end
+            -- This handles dragging for both Mouse and Touch input
+            local function updatePosition(currentPos)
+                Instance.Position = UDim2.new(
+                    0,
+                    currentPos.X - ObjPos.X + (Instance.Size.X.Offset * Instance.AnchorPoint.X),
+                    0,
+                    currentPos.Y - ObjPos.Y + (Instance.Size.Y.Offset * Instance.AnchorPoint.Y)
+                )
+            end
 
-				Instance.Position = UDim2.new(
-					0,
-					currentPos.X - ObjPos.X + (Instance.Size.X.Offset * Instance.AnchorPoint.X),
-					0,
-					currentPos.Y - ObjPos.Y + (Instance.Size.Y.Offset * Instance.AnchorPoint.Y)
-				)
-				RunService.RenderStepped:Wait()
-			end
-		end
-	end)
+            -- While dragging, continuously update the position
+            while isDragging do
+                local currentPos
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    currentPos = Vector2.new(Mouse.X, Mouse.Y)  -- For Mouse input
+                else
+                    currentPos = Input.Position  -- For Touch input
+                end
+
+                updatePosition(currentPos)
+
+                RunService.RenderStepped:Wait()
+            end
+        end
+    end)
 end
 
 function Library:AddToolTip(InfoStr, HoverInstance)
