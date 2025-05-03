@@ -22,32 +22,42 @@ draggableButton.Position = UDim2.new(0.5, -100, 0.5, -25)
 draggableButton.Text = "Toggle All GUIs"
 draggableButton.Parent = ScreenGui
 
-local dragging = false
-local dragInput, dragStart, startPos
+-- Make sure the button is always above other GUIs
+draggableButton.ZIndex = 9999
 
+local UserInputService = game:GetService("UserInputService")
+local dragging = false
+local dragStart, startPos
+
+-- Detect input start for both mouse and touch
 local function onInputBegan(input, gameProcessed)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 and not gameProcessed then
+	if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and not gameProcessed then
 		dragging = true
 		dragStart = input.Position
 		startPos = draggableButton.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
 	end
 end
 
+-- Update the button position as it is dragged
 local function onInputChanged(input)
-	if dragging then
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 		local delta = input.Position - dragStart
 		draggableButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 	end
 end
 
-draggableButton.InputBegan:Connect(onInputBegan)
-draggableButton.InputChanged:Connect(onInputChanged)
+-- End dragging
+local function onInputEnded(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end
 
+UserInputService.InputBegan:Connect(onInputBegan)
+UserInputService.InputChanged:Connect(onInputChanged)
+UserInputService.InputEnded:Connect(onInputEnded)
+
+-- Toggle visibility of all GUIs except the button
 local function toggleVisibility()
 	for _, child in ipairs(ScreenGui:GetChildren()) do
 		if child ~= draggableButton then
@@ -57,6 +67,7 @@ local function toggleVisibility()
 end
 
 draggableButton.MouseButton1Click:Connect(toggleVisibility)
+draggableButton.TouchTap:Connect(toggleVisibility)
 
 local Toggles = {};
 local Options = {};
