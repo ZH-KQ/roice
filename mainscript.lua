@@ -24,6 +24,7 @@ local SelectedEgg = "--"
 local AutoOpenEggs = false
 local AutoBuyBlackMarket = false
 local AutoBuyAlienShop = false
+local DisableEggHatchAnimation = false
 
 --//RobloxServices
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -35,6 +36,7 @@ local Player = game.Players.LocalPlayer
 local RenderedFolder = game.Workspace:WaitForChild("Rendered")
 local WorldMap = Player.PlayerGui:WaitForChild("ScreenGui"):WaitForChild("WorldMap")
 local WheelSpin = Player.PlayerGui:WaitForChild("ScreenGui"):WaitForChild("WheelSpin")
+local EggHatchFrame = Player.PlayerGui:WaitForChild("ScreenGui"):WaitForChild("Hatching")
 local SelectableEggsCollection = {}
 
 --// Functions
@@ -86,7 +88,7 @@ local function RefreshEggList()
 	end
 	return SelectableEggsCollection
 end
-	
+
 local function TeleportBypass2(Character, TargetPosition)
 	local Humanoid = Character and Character:FindFirstChild("Humanoid")
 	local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
@@ -386,9 +388,27 @@ AutoEggsGroupBox:AddToggle('AutoOpenEggs', {
 		end
 	end
 })
+AutoEggsGroupBox:AddToggle('DisableEggHatchAnimation', {
+	Text = 'Disable Egg Hatch Animation',
+	Default = false,
+	Callback = function(Value)
+		DisableEggHatchAnimation = Value
+		if DisableEggHatchAnimation then
+			task.spawn(function()
+				while DisableEggHatchAnimation do
+					if EggHatchFrame.Visible then
+						EggHatchFrame.Visible = false
+					end
+					task.wait(0.0001)
+				end
+			end)
+		end
+	end
+})
+
 local MerchantsGroupBox = Tabs.Main:AddRightGroupbox('Merchants')
 MerchantsGroupBox:AddToggle('AutoBuyBlackMarket', {
-	Text = 'Auto  Buy Black Market',
+	Text = 'Auto Buy Black Market',
 	Default = false,
 	Callback = function(Value)
 		AutoBuyBlackMarket = Value
@@ -411,7 +431,7 @@ MerchantsGroupBox:AddToggle('AutoBuyBlackMarket', {
 	end
 })
 MerchantsGroupBox:AddToggle('AutoBuyAlienShop', {
-	Text = 'Auto  Buy Alien Shop',
+	Text = 'Auto Buy Alien Shop',
 	Default = false,
 	Callback = function(Value)
 		AutoBuyAlienShop = Value
