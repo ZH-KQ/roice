@@ -232,8 +232,18 @@ local function AutoHatchEggs()
 		end)
 	end
 end
+local function StartDisableEggHatchAnimation()
+	GenericFolder.DescendantAdded:Connect(function(descendant)
+		task.defer(function()
+			if descendant:FindFirstChild("Highlight") or descendant:FindFirstChild("EggGlow") then
+				descendant:Destroy()
+			end
+		end)
+	end)
+end
 --//Startup
 RefreshEggList()
+DisableEggHatchAnimation()
 
 --//WindowCreation
 local Window = GithubSource:CreateWindow({
@@ -449,12 +459,7 @@ AutoEggsGroupBox:AddToggle('DisableEggHatchAnimation', {
 							end
 						end
 					end
-					for _, descendant in ipairs(GenericFolder:GetDescendants()) do
-						if descendant:FindFirstChild("Highlight") or descendant:FindFirstChild("EggGlow") then
-							descendant:Destroy()
-						end
-					end
-					task.wait(0.0001)
+					task.wait(0.001)
 				end
 			end)
 		end
