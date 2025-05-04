@@ -2175,7 +2175,7 @@ do
 			Value = Info.Multi and {};
 			Multi = Info.Multi;
 			Type = 'Dropdown';
-			SpecialType = Info.SpecialType; -- can be either 'Player' or 'Team'
+			SpecialType = Info.SpecialType; 
 			Callback = Info.Callback or function(Value) end;
 		};
 
