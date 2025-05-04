@@ -2194,10 +2194,9 @@ do
 				ZIndex = 5;
 				Parent = Container;
 			});
-
-			Groupbox:AddBlank(3);
 		end
 
+		-- Adjust relative offset for proper spacing in the container
 		for _, Element in next, Container:GetChildren() do
 			if not Element:IsA('UIListLayout') then
 				RelativeOffset = RelativeOffset + Element.Size.Y.Offset;
@@ -2357,6 +2356,7 @@ do
 			local Values = Dropdown.Values;
 			local Buttons = {};
 
+			-- Clear previous buttons
 			for _, Element in next, Scrolling:GetChildren() do
 				if not Element:IsA('UIListLayout') then
 					Element:Destroy();
