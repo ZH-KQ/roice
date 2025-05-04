@@ -236,12 +236,21 @@ end
 local function StartDisableEggHatchAnimation()
 	GenericFolder.DescendantAdded:Connect(function(descendant)
 		task.defer(function()
-			if (descendant:FindFirstChild("Highlight") or descendant:FindFirstChild("EggGlow")) and DisableEggHatchAnimation then
-				descendant:Destroy()
+			if DisableEggHatchAnimation and (
+				descendant:FindFirstChild("Highlight") or 
+					descendant:FindFirstChild("EggGlow") or 
+					descendant:FindFirstChild("Hitbox")
+				) then
+				for _, obj in ipairs(descendant:GetDescendants()) do
+					if obj:IsA("MeshPart") or obj:IsA("Decal") or obj:IsA("BasePart") then
+						obj.Transparency = 1
+					end
+				end
 			end
 		end)
 	end)
 end
+
 
 --// Startup
 RefreshEggList()
@@ -458,7 +467,7 @@ AutoEggsGroupBox:AddToggle('DisableEggHatchAnimation', {
 					if EggHatchFrame.Visible then
 						for _, child in ipairs(EggHatchFrame:GetChildren()) do
 							if child.Name == "Template" and child:IsA("Frame") then
-								child:Destroy()
+								child.Visible = false
 							end
 						end
 					end
