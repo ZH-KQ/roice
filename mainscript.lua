@@ -232,10 +232,10 @@ local function AutoHatchEggs()
 		end)
 	end
 end
-local function DisableEggHatchAnimation()
+local function StartDisableEggHatchAnimation()
 	GenericFolder.DescendantAdded:Connect(function(descendant)
 		task.defer(function()
-			if descendant:FindFirstChild("Highlight") or descendant:FindFirstChild("EggGlow") then
+			if descendant:FindFirstChild("Highlight") or descendant:FindFirstChild("EggGlow") and DisableEggHatchAnimation then
 				descendant:Destroy()
 			end
 		end)
@@ -243,7 +243,7 @@ local function DisableEggHatchAnimation()
 end
 --//Startup
 RefreshEggList()
-DisableEggHatchAnimation()
+StartDisableEggHatchAnimation()
 
 --//WindowCreation
 local Window = GithubSource:CreateWindow({
