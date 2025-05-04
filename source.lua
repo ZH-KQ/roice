@@ -2359,7 +2359,6 @@ do
 
 			for _, Element in next, Scrolling:GetChildren() do
 				if not Element:IsA('UIListLayout') then
-					-- Library:RemoveFromRegistry(Element);
 					Element:Destroy();
 				end;
 			end;
@@ -2397,44 +2396,26 @@ do
 					Parent = Button;
 				});
 
-				Library:OnHighlight(Button, Button,
-					{ BorderColor3 = 'AccentColor', ZIndex = 24 },
-					{ BorderColor3 = 'OutlineColor', ZIndex = 23 }
-				);
+				-- Transparent "touch catcher" to avoid blocking scrolling
+				local TouchCatcher = Instance.new("TextButton")
+				TouchCatcher.BackgroundTransparency = 1
+				TouchCatcher.Size = UDim2.new(1, 0, 1, 0)
+				TouchCatcher.ZIndex = ButtonLabel.ZIndex + 1
+				TouchCatcher.Text = ""
+				TouchCatcher.Parent = Button
 
-				local Selected;
+				TouchCatcher.InputBegan:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.Touch then
+						local startPos = input.Position
+						local ended
 
-				if Info.Multi then
-					Selected = Dropdown.Value[Value];
-				else
-					Selected = Dropdown.Value == Value;
-				end;
-
-				function Table:UpdateButton()
-					if Info.Multi then
-						Selected = Dropdown.Value[Value];
-					else
-						Selected = Dropdown.Value == Value;
-					end;
-
-					ButtonLabel.TextColor3 = Selected and Library.AccentColor or Library.FontColor;
-					Library.RegistryMap[ButtonLabel].Properties.TextColor3 = Selected and 'AccentColor' or 'FontColor';
-				end;
-
-				ButtonLabel.InputBegan:Connect(function(Input)
-					if Input.UserInputType == Enum.UserInputType.Touch then
-						local startPos = Input.Position
-
-						local touchEnded
-						touchEnded = Input.Changed:Connect(function()
-							if Input.UserInputState == Enum.UserInputState.End then
-								local endPos = Input.Position
-								local moved = (startPos - endPos).Magnitude > 10  -- if finger moved more than 10 pixels, treat as scroll
+						ended = input.Changed:Connect(function()
+							if input.UserInputState == Enum.UserInputState.End then
+								local endPos = input.Position
+								local moved = (startPos - endPos).Magnitude > 10
 
 								if not moved then
-									-- Only treat as a tap if it didn't move (actual selection)
-									touchEnded:Disconnect()
-
+									-- do your tap logic here
 									local Try = not Selected
 									if Dropdown:GetActiveValues() == 1 and (not Try) and (not Info.AllowNull) then
 										return
@@ -2465,39 +2446,10 @@ do
 									Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
 									Library:AttemptSave()
 								end
+
+								ended:Disconnect()
 							end
 						end)
-					elseif Input.UserInputType == Enum.UserInputType.MouseButton1 then
-						-- PC click logic remains the same
-						local Try = not Selected
-						if Dropdown:GetActiveValues() == 1 and (not Try) and (not Info.AllowNull) then
-							return
-						end
-
-						if Info.Multi then
-							Selected = Try
-							if Selected then
-								Dropdown.Value[Value] = true
-							else
-								Dropdown.Value[Value] = nil
-							end
-						else
-							Selected = Try
-							if Selected then
-								Dropdown.Value = Value
-							else
-								Dropdown.Value = nil
-							end
-							for _, OtherButton in next, Buttons do
-								OtherButton:UpdateButton()
-							end
-						end
-
-						Table:UpdateButton()
-						Dropdown:Display()
-						Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
-						Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
-						Library:AttemptSave()
 					end
 				end)
 
@@ -2510,8 +2462,6 @@ do
 			local Y = math.clamp(Count * 20, 0, MAX_DROPDOWN_ITEMS * 20) + 1;
 			ListOuter.Size = UDim2.new(1, -8, 0, Y);
 			Scrolling.CanvasSize = UDim2.new(0, 0, 0, (Count * 20) + 1);
-
-			-- ListOuter.Size = UDim2.new(1, -8, 0, (#Values * 20) + 2);
 		end;
 
 		function Dropdown:OpenDropdown()
@@ -2537,172 +2487,27 @@ do
 
 				for Value, Bool in next, Val do
 					if table.find(Dropdown.Values, Value) then
-						nTable[Value] = true
+						nTable[Value] = true;
 					end;
 				end;
 
 				Dropdown.Value = nTable;
 			else
-				if (not Val) then
-					Dropdown.Value = nil;
-				elseif table.find(Dropdown.Values, Val) then
-					Dropdown.Value = Val;
-				end;
-			end;
-
-			Dropdown:SetValues();
-
-			Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
-			Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
-		end;
-
-		DropdownOuter.InputBegan:Connect(function(Input)
-			if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) and not Library:MouseIsOverOpenedFrame() then
-				if ListOuter.Visible then
-					Dropdown:CloseDropdown();
-				else
-					Dropdown:OpenDropdown();
-				end;
-			end;
-		end);
-
-		InputService.InputBegan:Connect(function(Input)
-			if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) then
-				local AbsPos, AbsSize = ListOuter.AbsolutePosition, ListOuter.AbsoluteSize;
-
-				if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
-					or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
-
-					Dropdown:CloseDropdown();
-				end;
-			end;
-		end);
-
-		Dropdown:SetValues();
-		Dropdown:Display();
-
-		local Defaults = {}
-
-		if type(Info.Default) == 'string' then
-			local Idx = table.find(Dropdown.Values, Info.Default)
-			if Idx then
-				table.insert(Defaults, Idx)
-			end
-		elseif type(Info.Default) == 'table' then
-			for _, Value in next, Info.Default do
-				local Idx = table.find(Dropdown.Values, Value)
-				if Idx then
-					table.insert(Defaults, Idx)
-				end
-			end
-		elseif type(Info.Default) == 'number' and Dropdown.Values[Info.Default] ~= nil then
-			table.insert(Defaults, Info.Default)
-		end
-
-		if next(Defaults) then
-			for i = 1, #Defaults do
-				local Index = Defaults[i]
-				if Info.Multi then
-					Dropdown.Value[Dropdown.Values[Index]] = true
-				else
-					Dropdown.Value = Dropdown.Values[Index];
-				end
-
-				if (not Info.Multi) then break end
-			end
-
-			Dropdown:SetValues();
-			Dropdown:Display();
-		end
-
-		Groupbox:AddBlank(Info.BlankSize or 5);
-		Groupbox:Resize();
-
-		Options[Idx] = Dropdown;
-
-		return Dropdown;
-	end;
-
-	function Funcs:AddDependencyBox()
-		local Depbox = {
-			Dependencies = {};
-		};
-
-		local Groupbox = self;
-		local Container = Groupbox.Container;
-
-		local Holder = Library:Create('Frame', {
-			BackgroundTransparency = 1;
-			Size = UDim2.new(1, 0, 0, 0);
-			Visible = false;
-			Parent = Container;
-		});
-
-		local Frame = Library:Create('Frame', {
-			BackgroundTransparency = 1;
-			Size = UDim2.new(1, 0, 1, 0);
-			Visible = true;
-			Parent = Holder;
-		});
-
-		local Layout = Library:Create('UIListLayout', {
-			FillDirection = Enum.FillDirection.Vertical;
-			SortOrder = Enum.SortOrder.LayoutOrder;
-			Parent = Frame;
-		});
-
-		function Depbox:Resize()
-			Holder.Size = UDim2.new(1, 0, 0, Layout.AbsoluteContentSize.Y);
-			Groupbox:Resize();
-		end;
-
-		Layout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-			Depbox:Resize();
-		end);
-
-		Holder:GetPropertyChangedSignal('Visible'):Connect(function()
-			Depbox:Resize();
-		end);
-
-		function Depbox:Update()
-			for _, Dependency in next, Depbox.Dependencies do
-				local Elem = Dependency[1];
-				local Value = Dependency[2];
-
-				if Elem.Type == 'Toggle' and Elem.Value ~= Value then
-					Holder.Visible = false;
-					Depbox:Resize();
+				if not table.find(Dropdown.Values, Val) then
 					return;
 				end;
-			end;
 
-			Holder.Visible = true;
-			Depbox:Resize();
+				Dropdown.Value = Val;
+			end
+
+			Dropdown:Display();
+			Library:AttemptSave();
 		end;
 
-		function Depbox:SetupDependencies(Dependencies)
-			for _, Dependency in next, Dependencies do
-				assert(type(Dependency) == 'table', 'SetupDependencies: Dependency is not of type `table`.');
-				assert(Dependency[1], 'SetupDependencies: Dependency is missing element argument.');
-				assert(Dependency[2] ~= nil, 'SetupDependencies: Dependency is missing value argument.');
-			end;
+		Dropdown:Display();
+		Dropdown:SetValues();
 
-			Depbox.Dependencies = Dependencies;
-			Depbox:Update();
-		end;
-
-		Depbox.Container = Frame;
-
-		setmetatable(Depbox, BaseGroupbox);
-
-		table.insert(Library.DependencyBoxes, Depbox);
-
-		return Depbox;
-	end;
-
-	BaseGroupbox.__index = Funcs;
-	BaseGroupbox.__namecall = function(Table, Key, ...)
-		return Funcs[Key](...);
+		return Dropdown;
 	end;
 end;
 
