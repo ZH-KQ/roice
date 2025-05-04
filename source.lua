@@ -2296,9 +2296,10 @@ do
 
 		local Scrolling = Library:Create('ScrollingFrame', {
 			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-			BackgroundTransparency = 1,
+			BackgroundTransparency = 0,
 			BorderColor3 = Color3.fromRGB(0, 0, 0),
-			BorderSizePixel = 0,
+			BorderMode = Enum.BorderMode.Outline,
+			BorderSizePixel = 1,
 			CanvasSize = UDim2.new(0, 0, 0, 0),
 			Size = UDim2.new(1, 0, 1, 0),
 			ZIndex = 21,
