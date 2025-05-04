@@ -2295,19 +2295,22 @@ do
 		});
 
 		local Scrolling = Library:Create('ScrollingFrame', {
-			BackgroundTransparency = 0;
-			BorderSizePixel = 0;
-			CanvasSize = UDim2.new(0, 0, 0, 0);
-			Size = UDim2.new(1, 0, 1, 0);
-			ZIndex = 21;
-			Parent = ListInner;
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			BackgroundTransparency = 1,
+			BorderColor3 = Color3.fromRGB(0, 0, 0),
+			BorderMode = Enum.BorderMode.Outline,
+			BorderSizePixel = 1,
+			CanvasSize = UDim2.new(0, 0, 0, 0),
+			Size = UDim2.new(1, 0, 1, 0),
+			ZIndex = 21,
+			Parent = ListInner,
 
 			TopImage = 'rbxasset://textures/ui/Scroll/scroll-middle.png',
 			BottomImage = 'rbxasset://textures/ui/Scroll/scroll-middle.png',
 
 			ScrollBarThickness = 15,
 			ScrollBarImageColor3 = Library.AccentColor,
-		});
+		})
 
 		Library:AddToRegistry(Scrolling, {
 			ScrollBarImageColor3 = 'AccentColor'
