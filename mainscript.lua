@@ -21,6 +21,7 @@ local AutoCollectCollectibles = false
 local AutoCollectPickups = false
 local AutoCollectPlaytimeRewards = false
 local SelectedEgg = "--"
+local OpenEggAmount = 1
 local AutoOpenEggs = false
 local AutoBuyBlackMarket = false
 local AutoBuyAlienShop = false
@@ -341,6 +342,22 @@ local RefreshEggSelectionButton = AutoEggsGroupBox:AddButton({
 		end
 	end,
 })
+AutoEggsGroupBox:AddInput('OpenEggAmount', {
+	Default = '1',
+	Numeric = true, -- Sets if the textbox only allows numbers
+	Finished = true,  -- Sets if the textbox only calls callback if you pressed enter
+	Text = 'Open Egg Amount',
+	Placeholder = 'Set to your max egg amount.', -- Sets the placeholder text when the box is empty
+	Callback = function(Value)
+		if type(tonumber(Value)) == "number" then
+			OpenEggAmount = Value
+			GithubSource:Notify("Set open egg amount to "..Value.." !", 5)
+		else
+			OpenEggAmount = 0
+			GithubSource:Notify("Set open egg amount to 1!", 5)
+		end
+	end
+})
 AutoEggsGroupBox:AddToggle('AutoOpenEggs', {
 	Text = 'Auto Open Eggs',
 	Default = false,
@@ -368,9 +385,12 @@ AutoEggsGroupBox:AddToggle('AutoOpenEggs', {
 								local horizontal = Vector3.new(toTarget.X, 0, toTarget.Z)
 								local distance = horizontal.Magnitude
 								if distance < 13 then
-									VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.R, false, game)
-									task.wait(0.0001)
-									VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.R, false, game)
+									local Arguments = {
+										"HatchEgg",
+										SelectedEgg,
+										OpenEggAmount
+									}
+									game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(Arguments))
 								else
 									if not Character:FindFirstChildOfClass("BodyVelocity") then
 										TeleportBypass2(Character,TargetPosition)
@@ -573,3 +593,6 @@ local TeleportZen = TeleportsGroupBox:AddButton({
 	end,
 	DoubleClick = false,
 })
+
+local MenuGroupBox = Tabs['UI Settings']:AddLeftGroupbox('Menu')
+MenuGroupBox:AddButton('Unload', function() GithubSource:Unload() end)
