@@ -232,7 +232,7 @@ local function AutoHatchEggs()
 		end)
 	end
 end
-local function StartDisableEggHatchAnimation()
+local function DisableEggHatchAnimation()
 	GenericFolder.DescendantAdded:Connect(function(descendant)
 		task.defer(function()
 			if descendant:FindFirstChild("Highlight") or descendant:FindFirstChild("EggGlow") then
