@@ -2305,7 +2305,7 @@ do
 			TopImage = 'rbxasset://textures/ui/Scroll/scroll-middle.png',
 			BottomImage = 'rbxasset://textures/ui/Scroll/scroll-middle.png',
 
-			ScrollBarThickness = 3,
+			ScrollBarThickness = 15,
 			ScrollBarImageColor3 = Library.AccentColor,
 		});
 
@@ -3164,7 +3164,7 @@ function Library:CreateWindow(...)
 			CanvasSize = UDim2.new(0, 0, 0, 0);
 			BottomImage = '';
 			TopImage = '';
-			ScrollBarThickness = 3;
+			ScrollBarThickness = 0;
 			ZIndex = 2;
 			Parent = TabFrame;
 		});
@@ -3177,7 +3177,7 @@ function Library:CreateWindow(...)
 			CanvasSize = UDim2.new(0, 0, 0, 0);
 			BottomImage = '';
 			TopImage = '';
-			ScrollBarThickness = 3;
+			ScrollBarThickness = 0;
 			ZIndex = 2;
 			Parent = TabFrame;
 		});
