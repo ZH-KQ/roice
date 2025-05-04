@@ -3164,7 +3164,7 @@ function Library:CreateWindow(...)
 			CanvasSize = UDim2.new(0, 0, 0, 0);
 			BottomImage = '';
 			TopImage = '';
-			ScrollBarThickness = 0;
+			ScrollBarThickness = 3;
 			ZIndex = 2;
 			Parent = TabFrame;
 		});
