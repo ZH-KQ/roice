@@ -34,8 +34,10 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 --// Variables
 local Player = game.Players.LocalPlayer
 local RenderedFolder = game.Workspace:WaitForChild("Rendered")
+local GenericFolder = RenderedFolder:WaitForChild("Generic")
 local WorldMap = Player.PlayerGui:WaitForChild("ScreenGui"):WaitForChild("WorldMap")
 local WheelSpin = Player.PlayerGui:WaitForChild("ScreenGui"):WaitForChild("WheelSpin")
+local HUD = Player.PlayerGui:WaitForChild("ScreenGui"):WaitForChild("HUD")
 local EggHatchFrame = Player.PlayerGui:WaitForChild("ScreenGui"):WaitForChild("Hatching")
 local SelectableEggsCollection = {}
 
@@ -70,20 +72,10 @@ end;
 local function RefreshEggList()
 	table.clear(SelectableEggsCollection)
 	table.insert(SelectableEggsCollection, "--")
-	local RenderedFolder = game.Workspace:FindFirstChild("Rendered")
 	for _, instance in ipairs(game.ReplicatedStorage:WaitForChild("Assets"):WaitForChild("Eggs"):GetChildren()) do
 		if instance.Name:find("Egg") and not instance.Name:find("Golden") and not table.find(SelectableEggsCollection, instance.Name) then
-			if RenderedFolder then
-				for _, ChunkerFolder in pairs(RenderedFolder:GetChildren()) do
-					if ChunkerFolder.Name == "Chunker" then
-						local FoundEgg = ChunkerFolder:FindFirstChild(instance.Name)
-						if FoundEgg and FoundEgg:FindFirstChild("Plate") then
-							table.insert(SelectableEggsCollection, FoundEgg.Name)
-							break
-						end
-					end
-				end
-			end
+			table.insert(SelectableEggsCollection, instance.Name)
+			print(instance.Name)
 		end
 	end
 	return SelectableEggsCollection
@@ -134,6 +126,15 @@ local function TeleportBypass2(Character, TargetPosition)
 		end)
 		RunService.RenderStepped:Connect(function(dt)
 			if not Character or not Humanoid or not HumanoidRootPart or reached then return end
+			if not AutoOpenEggs then
+				reached = true
+				bodyVelocity:Destroy()
+				noclipConnection:Disconnect()
+				HumanoidRootPart.CanCollide = true
+				Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+				return
+			end
+
 			local toTarget = TargetPosition - HumanoidRootPart.Position
 			local horizontal = Vector3.new(toTarget.X, toTarget.Y, toTarget.Z)
 			local distance = horizontal.Magnitude
@@ -141,19 +142,96 @@ local function TeleportBypass2(Character, TargetPosition)
 				reached = true
 				bodyVelocity:Destroy()
 				noclipConnection:Disconnect()
-				for part, canCollide in pairs(originalCollisions) do
-					part.CanCollide = canCollide
-				end
+				HumanoidRootPart.CanCollide = true
 				Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
 				return
 			end
+
 			local step = math.min(speed, distance / dt)
 			local moveDirection = horizontal.Unit * step
 			bodyVelocity.Velocity = moveDirection
 		end)
 	end
 end
+local function AutoHatchEggs()
+	if AutoOpenEggs then
+		if SelectedEgg == "--" then return end
+		GithubSource:Notify("Wait a few seconds until you're tped to the egg hatching area.", 5)
+		local args = {
+			"Teleport",
+			"Workspace.Worlds.The Overworld.PortalSpawn"
+		}
+		game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(args))
+		local InfinityEggLocation = nil
+		local Character = Player.Character
+		local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+		task.wait(1)
+		for _, folder in ipairs(game.Workspace:WaitForChild("Rendered"):GetChildren()) do
+			if folder:IsA("Folder") and folder.Name == "Chunker" then
+				InfinityEggLocation = folder:FindFirstChild("Infinity Egg")
+				if InfinityEggLocation then break end
+			end
+		end
+		if InfinityEggLocation then
+			local InfinityEggPlate = InfinityEggLocation:FindFirstChild("Plate")
+			if InfinityEggPlate then
+				local TargetPosition = InfinityEggPlate.Position + Vector3.new(0, 5, 0)
+				local toTarget = TargetPosition - HumanoidRootPart.Position
+				local horizontal = Vector3.new(toTarget.X, 0, toTarget.Z)
+				local distance = horizontal.Magnitude
 
+				TeleportBypass2(Character, TargetPosition)
+
+				repeat
+					wait()
+					toTarget = TargetPosition - HumanoidRootPart.Position
+					horizontal = Vector3.new(toTarget.X, 0, toTarget.Z)
+					distance = horizontal.Magnitude
+				until distance < 13
+			end
+		end
+		task.spawn(function()
+			local CurrentHatchingEgg = SelectedEgg
+			while AutoOpenEggs and CurrentHatchingEgg == SelectedEgg do
+				if CurrentHatchingEgg ~= SelectedEgg then return end
+				local Character = Player.Character
+				local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+				local EggLocation = nil
+				if Character and HumanoidRootPart then
+					if SelectedEgg == "--" then return end
+					for _, folder in ipairs(game.Workspace:WaitForChild("Rendered"):GetChildren()) do
+						if folder:IsA("Folder") and folder.Name == "Chunker" then
+							EggLocation = folder:FindFirstChild(CurrentHatchingEgg)
+							if EggLocation then break end
+						end
+					end
+					if EggLocation then
+						local EggPlate = EggLocation:FindFirstChild("Plate")
+						if EggPlate then
+							local TargetPosition = EggPlate.Position + Vector3.new(0, 5, 0)
+							local toTarget = TargetPosition - HumanoidRootPart.Position
+							local horizontal = Vector3.new(toTarget.X, 0, toTarget.Z)
+							local distance = horizontal.Magnitude
+							if distance < 13 then
+								VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.R, false, game)
+								task.wait()
+								VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.R, false, game)
+							else
+								if not Character:FindFirstChildOfClass("BodyVelocity") then
+									TeleportBypass2(Character,TargetPosition)
+								end
+							end
+						end
+					else
+						GithubSource:Notify("Egg not found, egg is either in inventory or unhatchable", 5)
+						return
+					end
+				end
+				task.wait(0.1)
+			end
+		end)
+	end
+end
 --//Startup
 RefreshEggList()
 
@@ -328,99 +406,31 @@ AutoEggsGroupBox:AddDropdown('SelectedEgg', {
 		SelectedEgg = Value
 	end
 })
-local RefreshEggSelectionButton = AutoEggsGroupBox:AddButton({
-	Text = 'Refresh Egg Selection',
-	Func = function()
-		GithubSource:Notify("Wait a few seconds until you're tped to the egg hatching area.", 5)
-		SelectedEgg = "--"
-		Options.SelectedEgg:SetValues("--")
-		Options.SelectedEgg:SetValue("--")
-		Options.SelectedEgg:CloseDropdown()
-		local InfinityEggLocation = nil
-		local Character = Player.Character
-		local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-		for _, folder in ipairs(game.Workspace:WaitForChild("Rendered"):GetChildren()) do
-			if folder:IsA("Folder") and folder.Name == "Chunker" then
-				InfinityEggLocation = folder:FindFirstChild("Infinity Egg")
-				if InfinityEggLocation then break end
-			end
-		end
-		if InfinityEggLocation then
-			local InfinityEggPlate = InfinityEggLocation:FindFirstChild("Plate")
-			if InfinityEggPlate then
-				local TargetPosition = InfinityEggPlate.Position + Vector3.new(0, 5, 0)
-				local toTarget = TargetPosition - HumanoidRootPart.Position
-				local horizontal = Vector3.new(toTarget.X, 0, toTarget.Z)
-				local distance = horizontal.Magnitude
-
-				TeleportBypass2(Character, TargetPosition)
-
-				repeat
-					wait()
-					toTarget = TargetPosition - HumanoidRootPart.Position
-					horizontal = Vector3.new(toTarget.X, 0, toTarget.Z)
-					distance = horizontal.Magnitude
-				until distance < 13
-
-				local RefreshedEggList = RefreshEggList()
-				if Options.SelectedEgg then
-					Options.SelectedEgg:SetValues(RefreshedEggList)
-					Options.SelectedEgg:SetValue("--")
-					GithubSource:Notify("Egg List refreshed!", 5)
-				else
-					warn("SelectedEgg dropdown or RefreshDropdown method not found.")
-				end
-			end
-		end
-	end,
-})
 AutoEggsGroupBox:AddToggle('AutoOpenEggs', {
 	Text = 'Auto Open Eggs',
 	Default = false,
 	Callback = function(Value)
 		AutoOpenEggs = Value
-		if AutoOpenEggs then
-			task.spawn(function()
-				while AutoOpenEggs do
-					local Character = Player.Character
-					local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-					local EggLocation = nil
-					if Character and HumanoidRootPart then
-						if SelectedEgg == "--" then return end
-						for _, folder in ipairs(game.Workspace:WaitForChild("Rendered"):GetChildren()) do
-							if folder:IsA("Folder") and folder.Name == "Chunker" then
-								EggLocation = folder:FindFirstChild(SelectedEgg)
-								if EggLocation then break end
-							end
-						end
-						if EggLocation then
-							local EggPlate = EggLocation:FindFirstChild("Plate")
-							if EggPlate then
-								local TargetPosition = EggPlate.Position + Vector3.new(0, 5, 0)
-								local toTarget = TargetPosition - HumanoidRootPart.Position
-								local horizontal = Vector3.new(toTarget.X, 0, toTarget.Z)
-								local distance = horizontal.Magnitude
-								if distance < 13 then
-									VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.R, false, game)
-									task.wait(0.0001)
-									VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.R, false, game)
-								else
-									if not Character:FindFirstChildOfClass("BodyVelocity") then
-										TeleportBypass2(Character,TargetPosition)
-									end
-								end
-							end
-						else
-							GithubSource:Notify("Egg not found, teleport to spawn and refresh selectable eggs.", 5)
-							return
-						end
-					end
-					task.wait(0.1)
-				end
-			end)
-		end
 	end
 })
+
+local lastSelectedEgg = SelectedEgg
+local lastAutoOpenEggs = AutoOpenEggs
+
+task.spawn(function()
+	while true do
+		wait(0.1)
+		if (AutoOpenEggs ~= lastAutoOpenEggs) or (SelectedEgg ~= lastSelectedEgg) then
+			lastAutoOpenEggs = AutoOpenEggs
+			lastSelectedEgg = SelectedEgg
+
+			if AutoOpenEggs == true then
+				AutoHatchEggs()
+			end
+		end
+	end
+end)
+
 AutoEggsGroupBox:AddToggle('DisableEggHatchAnimation', {
 	Text = 'Disable Egg Hatch Animation',
 	Default = false,
@@ -429,8 +439,20 @@ AutoEggsGroupBox:AddToggle('DisableEggHatchAnimation', {
 		if DisableEggHatchAnimation then
 			task.spawn(function()
 				while DisableEggHatchAnimation do
+					if not HUD.Visible then
+						HUD.Visible = true
+					end
 					if EggHatchFrame.Visible then
-						EggHatchFrame.Visible = false
+						for _, child in ipairs(EggHatchFrame:GetChildren()) do
+							if child.Name == "Template" and child:IsA("Frame") then
+								child:Destroy()
+							end
+						end
+					end
+					for _, descendant in ipairs(GenericFolder:GetDescendants()) do
+						if descendant:FindFirstChild("Highlight") or descendant:FindFirstChild("EggGlow") then
+							descendant:Destroy()
+						end
 					end
 					task.wait(0.0001)
 				end
