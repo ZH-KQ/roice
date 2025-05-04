@@ -331,7 +331,9 @@ AutoEggsGroupBox:AddDropdown('SelectedEgg', {
 local RefreshEggSelectionButton = AutoEggsGroupBox:AddButton({
 	Text = 'Refresh Egg Selection',
 	Func = function()
+		GithubSource:Notify("Wait a few seconds until you're tped to the egg hatching area.", 5)
 		SelectedEgg = "--"
+		Options.SelectedEgg:SetValues("--")
 		Options.SelectedEgg:SetValue("--")
 		Options.SelectedEgg:CloseDropdown()
 		local InfinityEggLocation = nil
@@ -350,15 +352,25 @@ local RefreshEggSelectionButton = AutoEggsGroupBox:AddButton({
 				local toTarget = TargetPosition - HumanoidRootPart.Position
 				local horizontal = Vector3.new(toTarget.X, 0, toTarget.Z)
 				local distance = horizontal.Magnitude
-				TeleportBypass2(Character,TargetPosition)
+
+				TeleportBypass2(Character, TargetPosition)
+
+				repeat
+					wait()
+					toTarget = TargetPosition - HumanoidRootPart.Position
+					horizontal = Vector3.new(toTarget.X, 0, toTarget.Z)
+					distance = horizontal.Magnitude
+				until distance < 13
+
+				local RefreshedEggList = RefreshEggList()
+				if Options.SelectedEgg then
+					Options.SelectedEgg:SetValues(RefreshedEggList)
+					Options.SelectedEgg:SetValue("--")
+					GithubSource:Notify("Egg List refreshed!", 5)
+				else
+					warn("SelectedEgg dropdown or RefreshDropdown method not found.")
+				end
 			end
-		end
-		local RefreshedEggList = RefreshEggList()
-		if Options.SelectedEgg then
-			Options.SelectedEgg:SetValues(RefreshedEggList)
-			Options.SelectedEgg:SetValue("--")
-		else
-			warn("SelectedEgg dropdown or RefreshDropdown method not found.")
 		end
 	end,
 })
