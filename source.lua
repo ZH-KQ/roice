@@ -2295,7 +2295,7 @@ do
 		});
 
 		local Scrolling = Library:Create('ScrollingFrame', {
-			BackgroundTransparency = 1;
+			BackgroundTransparency = 0;
 			BorderSizePixel = 0;
 			CanvasSize = UDim2.new(0, 0, 0, 0);
 			Size = UDim2.new(1, 0, 1, 0);
