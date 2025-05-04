@@ -21,7 +21,6 @@ local AutoCollectCollectibles = false
 local AutoCollectPickups = false
 local AutoCollectPlaytimeRewards = false
 local SelectedEgg = "--"
-local OpenEggAmount = 1
 local AutoOpenEggs = false
 local AutoBuyBlackMarket = false
 local AutoBuyAlienShop = false
@@ -332,31 +331,36 @@ AutoEggsGroupBox:AddDropdown('SelectedEgg', {
 local RefreshEggSelectionButton = AutoEggsGroupBox:AddButton({
 	Text = 'Refresh Egg Selection',
 	Func = function()
+		SelectedEgg = "--"
+		Options.SelectedEgg:SetValue("--")
+		Options.SelectedEgg:CloseDropdown()
+		local InfinityEggLocation = nil
+		local Character = Player.Character
+		local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+		for _, folder in ipairs(game.Workspace:WaitForChild("Rendered"):GetChildren()) do
+			if folder:IsA("Folder") and folder.Name == "Chunker" then
+				InfinityEggLocation = folder:FindFirstChild("Infinity Egg")
+				if InfinityEggLocation then break end
+			end
+		end
+		if InfinityEggLocation then
+			local InfinityEggPlate = InfinityEggLocation:FindFirstChild("Plate")
+			if InfinityEggPlate then
+				local TargetPosition = InfinityEggPlate.Position + Vector3.new(0, 5, 0)
+				local toTarget = TargetPosition - HumanoidRootPart.Position
+				local horizontal = Vector3.new(toTarget.X, 0, toTarget.Z)
+				local distance = horizontal.Magnitude
+				TeleportBypass2(Character,TargetPosition)
+			end
+		end
 		local RefreshedEggList = RefreshEggList()
 		if Options.SelectedEgg then
 			Options.SelectedEgg:SetValues(RefreshedEggList)
 			Options.SelectedEgg:SetValue("--")
-			Options.SelectedEgg:CloseDropdown()
 		else
 			warn("SelectedEgg dropdown or RefreshDropdown method not found.")
 		end
 	end,
-})
-AutoEggsGroupBox:AddInput('OpenEggAmount', {
-	Default = '1',
-	Numeric = true, -- Sets if the textbox only allows numbers
-	Finished = true,  -- Sets if the textbox only calls callback if you pressed enter
-	Text = 'Open Egg Amount',
-	Placeholder = 'Set to your max egg amount.', -- Sets the placeholder text when the box is empty
-	Callback = function(Value)
-		if type(tonumber(Value)) == "number" then
-			OpenEggAmount = Value
-			GithubSource:Notify("Set open egg amount to "..Value.." !", 5)
-		else
-			OpenEggAmount = 0
-			GithubSource:Notify("Set open egg amount to 1!", 5)
-		end
-	end
 })
 AutoEggsGroupBox:AddToggle('AutoOpenEggs', {
 	Text = 'Auto Open Eggs',
@@ -385,12 +389,9 @@ AutoEggsGroupBox:AddToggle('AutoOpenEggs', {
 								local horizontal = Vector3.new(toTarget.X, 0, toTarget.Z)
 								local distance = horizontal.Magnitude
 								if distance < 13 then
-									local Arguments = {
-										"HatchEgg",
-										SelectedEgg,
-										OpenEggAmount
-									}
-									game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Framework"):WaitForChild("Network"):WaitForChild("Remote"):WaitForChild("Event"):FireServer(unpack(Arguments))
+									VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.R, false, game)
+									task.wait(0.0001)
+									VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.R, false, game)
 								else
 									if not Character:FindFirstChildOfClass("BodyVelocity") then
 										TeleportBypass2(Character,TargetPosition)
