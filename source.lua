@@ -2422,43 +2422,84 @@ do
 				end;
 
 				ButtonLabel.InputBegan:Connect(function(Input)
-					if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-						local Try = not Selected;
+					if Input.UserInputType == Enum.UserInputType.Touch then
+						local startPos = Input.Position
 
+						local touchEnded
+						touchEnded = Input.Changed:Connect(function()
+							if Input.UserInputState == Enum.UserInputState.End then
+								local endPos = Input.Position
+								local moved = (startPos - endPos).Magnitude > 10  -- if finger moved more than 10 pixels, treat as scroll
+
+								if not moved then
+									-- Only treat as a tap if it didn't move (actual selection)
+									touchEnded:Disconnect()
+
+									local Try = not Selected
+									if Dropdown:GetActiveValues() == 1 and (not Try) and (not Info.AllowNull) then
+										return
+									end
+
+									if Info.Multi then
+										Selected = Try
+										if Selected then
+											Dropdown.Value[Value] = true
+										else
+											Dropdown.Value[Value] = nil
+										end
+									else
+										Selected = Try
+										if Selected then
+											Dropdown.Value = Value
+										else
+											Dropdown.Value = nil
+										end
+										for _, OtherButton in next, Buttons do
+											OtherButton:UpdateButton()
+										end
+									end
+
+									Table:UpdateButton()
+									Dropdown:Display()
+									Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
+									Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
+									Library:AttemptSave()
+								end
+							end
+						end)
+					elseif Input.UserInputType == Enum.UserInputType.MouseButton1 then
+						-- PC click logic remains the same
+						local Try = not Selected
 						if Dropdown:GetActiveValues() == 1 and (not Try) and (not Info.AllowNull) then
-						else
-							if Info.Multi then
-								Selected = Try;
+							return
+						end
 
-								if Selected then
-									Dropdown.Value[Value] = true;
-								else
-									Dropdown.Value[Value] = nil;
-								end;
+						if Info.Multi then
+							Selected = Try
+							if Selected then
+								Dropdown.Value[Value] = true
 							else
-								Selected = Try;
+								Dropdown.Value[Value] = nil
+							end
+						else
+							Selected = Try
+							if Selected then
+								Dropdown.Value = Value
+							else
+								Dropdown.Value = nil
+							end
+							for _, OtherButton in next, Buttons do
+								OtherButton:UpdateButton()
+							end
+						end
 
-								if Selected then
-									Dropdown.Value = Value;
-								else
-									Dropdown.Value = nil;
-								end;
-
-								for _, OtherButton in next, Buttons do
-									OtherButton:UpdateButton();
-								end;
-							end;
-
-							Table:UpdateButton();
-							Dropdown:Display();
-
-							Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
-							Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
-
-							Library:AttemptSave();
-						end;
-					end;
-				end);
+						Table:UpdateButton()
+						Dropdown:Display()
+						Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
+						Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
+						Library:AttemptSave()
+					end
+				end)
 
 				Table:UpdateButton();
 				Dropdown:Display();
@@ -2958,7 +2999,7 @@ function Library:CreateWindow(...)
 	});
 
 	Library:MakeDraggable(Outer, 25);
-	
+
 	local ToggleGuiButton = Instance.new('TextButton')
 	ToggleGuiButton.Size = UDim2.new(0, 200, 0, 50)
 	ToggleGuiButton.Position = UDim2.new(0.5, -100, 0.5, -25)
