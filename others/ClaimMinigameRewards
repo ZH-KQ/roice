@@ -1,0 +1,31 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui"):WaitForChild("ScreenGui")
+
+RunService.RenderStepped:Connect(function()
+    local prompt = playerGui:FindFirstChild("Prompt")
+    if prompt and prompt:IsA("Frame") then
+        local frame = prompt:FindFirstChild("Frame")
+        if frame then
+            local main = frame:FindFirstChild("Main")
+            if main then
+                local buttons = main:FindFirstChild("Buttons")
+                if buttons then
+                    local template = buttons:FindFirstChild("Template")
+                    if template then
+                        local button = template:FindFirstChild("Button")
+                        if button then
+                            if not button:GetAttribute("Pressed") then
+                                button:SetAttribute("Pressed", true)
+                                task.wait(1)
+                                button:SetAttribute("Pressed", false)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
